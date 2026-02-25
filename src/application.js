@@ -57,8 +57,12 @@ app.use((req, res, next) => {
 // Static files for uploads
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-// Database connection
-connectDB();
+// Database connection (can be skipped in tests via SKIP_DB=true)
+if (process.env.SKIP_DB !== 'true') {
+  connectDB();
+} else {
+  console.log('⚠️  Skipping database connection because SKIP_DB=true');
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -136,15 +140,9 @@ const loadRoutes = async () => {
   }
 };
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
-});
-
 // Global error handler
+// NOTE: The 404 handler is registered dynamically after routes are loaded to
+// ensure mounted routers are reachable. See startServer below.
 app.use((error, req, res, next) => {
   console.error('❌ Error:', error);
 
@@ -194,12 +192,22 @@ app.use((error, req, res, next) => {
 const startServer = async () => {
   await loadRoutes();
 
-  app.listen(PORT, () => {
+  // 404 handler (register after routes so mounted routers are reachable)
+  app.use('*', (req, res) => {
+    res.status(404).json({
+      success: false,
+      message: 'Route not found'
+    });
+  });
+
+  const server = app.listen(PORT, () => {
     logger.info(`🚀 Server is running on port ${PORT}`);
     logger.info(`🌍 Environment: ${appConfig.nodeEnv}`);
     logger.info(`📡 API Base URL: http://localhost:${PORT}/api`);
     logger.info(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
   });
+
+  return server;
 };
 
 // Graceful shutdown

@@ -165,9 +165,3 @@ yarn.lock
 
 
 
-git init
-git add .
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/Alpha777-cyber/Integrated-Judicial-Management-System.git
-git push -u origin main

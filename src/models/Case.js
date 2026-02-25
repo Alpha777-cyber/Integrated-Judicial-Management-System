@@ -6,7 +6,7 @@ const caseSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Case ID is required'],
     unique: true,
-    default: function() {
+    default: function () {
       return `CASE-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
     }
   },
@@ -223,36 +223,36 @@ caseSchema.virtual('appointments', {
 });
 
 // Pre-save middleware to update lastUpdated
-caseSchema.pre('save', function(next) {
+caseSchema.pre('save', function (next) {
   this.lastUpdated = new Date();
   next();
 });
 
 // Instance method to add status change
-caseSchema.methods.addStatusChange = function(newStatus, changedBy, notes = '') {
+caseSchema.methods.addStatusChange = function (newStatus, changedBy, notes = '') {
   this.statusHistory.push({
     status: newStatus,
     changedBy,
     notes
   });
   this.status = newStatus;
-  
+
   // Set completion date if case is completed
   if (newStatus === 'completed') {
     this.completionDate = new Date();
   }
-  
+
   return this.save();
 };
 
 // Instance method to add document
-caseSchema.methods.addDocument = function(docData) {
+caseSchema.methods.addDocument = function (docData) {
   this.documents.push(docData);
   return this.save();
 };
 
 // Instance method to add note
-caseSchema.methods.addNote = function(content, author, isInternal = false) {
+caseSchema.methods.addNote = function (content, author, isInternal = false) {
   this.notes.push({
     content,
     author,
@@ -262,17 +262,17 @@ caseSchema.methods.addNote = function(content, author, isInternal = false) {
 };
 
 // Static method to get cases by user
-caseSchema.statics.findByUser = function(userId, options = {}) {
+caseSchema.statics.findByUser = function (userId, options = {}) {
   const query = { userId };
-  
+
   if (options.status) {
     query.status = options.status;
   }
-  
+
   if (options.caseType) {
     query.caseType = options.caseType;
   }
-  
+
   return this.find(query)
     .populate('assignedLawyer', 'name email specialization rating')
     .populate('assignedJudge', 'name email')
@@ -281,13 +281,13 @@ caseSchema.statics.findByUser = function(userId, options = {}) {
 };
 
 // Static method to get cases for lawyers
-caseSchema.statics.findByLawyer = function(lawyerId, options = {}) {
+caseSchema.statics.findByLawyer = function (lawyerId, options = {}) {
   const query = { assignedLawyer: lawyerId };
-  
+
   if (options.status) {
     query.status = options.status;
   }
-  
+
   return this.find(query)
     .populate('userId', 'name email phone')
     .sort(options.sort || { submissionDate: -1 });
@@ -313,7 +313,6 @@ caseSchema.index({ userId: 1, status: 1 });
 caseSchema.index({ assignedLawyer: 1, status: 1 });
 caseSchema.index({ status: 1, priority: 1 });
 caseSchema.index({ caseType: 1, submissionDate: -1 });
-caseSchema.index({ caseId: 1 }, { unique: true });
 
 const Case = mongoose.model('Case', caseSchema);
 

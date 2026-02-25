@@ -7,10 +7,11 @@ import crypto from 'crypto';
 
 // Create email transporter
 const createTransporter = () => {
-  return nodemailer.createTransporter({
+  const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : undefined;
+  return nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: process.env.EMAIL_PORT === '465', // true for 465, false for other ports
+    port,
+    secure: port === 465, // true for 465, false for other ports
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
@@ -26,9 +27,9 @@ const createTransporter = () => {
 export const sendWelcomeEmail = async (user, verificationToken) => {
   try {
     const transporter = createTransporter();
-    
+
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-    
+
     const mailOptions = {
       from: `"UBUTABERAhub" <${process.env.EMAIL_USER}>`,
       to: user.email,
@@ -90,9 +91,9 @@ export const sendWelcomeEmail = async (user, verificationToken) => {
 export const sendPasswordResetEmail = async (user, resetToken) => {
   try {
     const transporter = createTransporter();
-    
+
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-    
+
     const mailOptions = {
       from: `"UBUTABERAhub" <${process.env.EMAIL_USER}>`,
       to: user.email,
@@ -163,9 +164,9 @@ export const sendPasswordResetEmail = async (user, resetToken) => {
 export const sendAppointmentConfirmation = async (appointment, user, lawyer) => {
   try {
     const transporter = createTransporter();
-    
+
     const appointmentUrl = `${process.env.FRONTEND_URL}/appointments`;
-    
+
     const mailOptions = {
       from: `"UBUTABERAhub" <${process.env.EMAIL_USER}>`,
       to: user.email,
@@ -241,7 +242,7 @@ export const sendAppointmentConfirmation = async (appointment, user, lawyer) => 
 export const sendAppointmentReminder = async (appointment, user, lawyer) => {
   try {
     const transporter = createTransporter();
-    
+
     const mailOptions = {
       from: `"UBUTABERAhub" <${process.env.EMAIL_USER}>`,
       to: user.email,

@@ -6,7 +6,7 @@ const appointmentSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Appointment ID is required'],
     unique: true,
-    default: function() {
+    default: function () {
       return `APT-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
     }
   },
@@ -77,17 +77,17 @@ const appointmentSchema = new mongoose.Schema({
   // Location details
   location: {
     type: String,
-    required: function() {
+    required: function () {
       return this.type === 'in-person meeting' || this.type === 'court appearance';
     }
   },
   meetingUrl: {
     type: String,
-    required: function() {
+    required: function () {
       return this.type === 'video consultation';
     },
     validate: {
-      validator: function(v) {
+      validator: function (v) {
         if (this.type === 'video consultation') {
           return /^https?:\/\/.+/.test(v);
         }
@@ -254,17 +254,17 @@ const appointmentSchema = new mongoose.Schema({
 });
 
 // Virtual for appointment duration in minutes
-appointmentSchema.virtual('durationMinutes').get(function() {
+appointmentSchema.virtual('durationMinutes').get(function () {
   return this.duration;
 });
 
 // Virtual for formatted date and time
-appointmentSchema.virtual('formattedDateTime').get(function() {
+appointmentSchema.virtual('formattedDateTime').get(function () {
   return `${this.date.toDateString()} ${this.startTime} - ${this.endTime}`;
 });
 
 // Pre-save middleware to validate time logic
-appointmentSchema.pre('save', function(next) {
+appointmentSchema.pre('save', function (next) {
   // Convert times to minutes for comparison
   const [startHour, startMin] = this.startTime.split(':').map(Number);
   const [endHour, endMin] = this.endTime.split(':').map(Number);
@@ -286,23 +286,23 @@ appointmentSchema.pre('save', function(next) {
 });
 
 // Instance method to add status change
-appointmentSchema.methods.addStatusChange = function(newStatus, changedBy, notes = '') {
+appointmentSchema.methods.addStatusChange = function (newStatus, changedBy, notes = '') {
   this.statusHistory.push({
     status: newStatus,
     changedBy,
     notes
   });
   this.status = newStatus;
-  
+
   if (newStatus === 'cancelled') {
     this.cancelledAt = new Date();
   }
-  
+
   return this.save();
 };
 
 // Instance method to add note
-appointmentSchema.methods.addNote = function(content, author, isPrivate = false) {
+appointmentSchema.methods.addNote = function (content, author, isPrivate = false) {
   this.notes.push({
     content,
     author,
@@ -312,23 +312,23 @@ appointmentSchema.methods.addNote = function(content, author, isPrivate = false)
 };
 
 // Instance method to add document
-appointmentSchema.methods.addDocument = function(docData) {
+appointmentSchema.methods.addDocument = function (docData) {
   this.documents.push(docData);
   return this.save();
 };
 
 // Static method to get appointments for user
-appointmentSchema.statics.findByUser = function(userId, options = {}) {
+appointmentSchema.statics.findByUser = function (userId, options = {}) {
   const query = { userId };
-  
+
   if (options.status) {
     query.status = options.status;
   }
-  
+
   if (options.type) {
     query.type = options.type;
   }
-  
+
   return this.find(query)
     .populate('lawyerId', 'name email specialization rating hourlyRate')
     .populate('caseId', 'caseId title status')
@@ -336,19 +336,19 @@ appointmentSchema.statics.findByUser = function(userId, options = {}) {
 };
 
 // Static method to get appointments for lawyer
-appointmentSchema.statics.findByLawyer = function(lawyerId, options = {}) {
+appointmentSchema.statics.findByLawyer = function (lawyerId, options = {}) {
   const query = { lawyerId };
-  
+
   if (options.status) {
     query.status = options.status;
   }
-  
+
   if (options.dateFrom || options.dateTo) {
     query.date = {};
     if (options.dateFrom) query.date.$gte = options.dateFrom;
     if (options.dateTo) query.date.$lte = options.dateTo;
   }
-  
+
   return this.find(query)
     .populate('userId', 'name email phone')
     .populate('caseId', 'caseId title status')
@@ -356,7 +356,7 @@ appointmentSchema.statics.findByLawyer = function(lawyerId, options = {}) {
 };
 
 // Static method to check availability
-appointmentSchema.statics.checkAvailability = function(lawyerId, date, startTime, endTime, excludeAppointmentId = null) {
+appointmentSchema.statics.checkAvailability = function (lawyerId, date, startTime, endTime, excludeAppointmentId = null) {
   const query = {
     lawyerId,
     date,
@@ -365,11 +365,11 @@ appointmentSchema.statics.checkAvailability = function(lawyerId, date, startTime
       { startTime: { $lt: endTime }, endTime: { $gt: startTime } }
     ]
   };
-  
+
   if (excludeAppointmentId) {
     query._id = { $ne: excludeAppointmentId };
   }
-  
+
   return this.find(query);
 };
 
@@ -378,7 +378,6 @@ appointmentSchema.index({ userId: 1, status: 1 });
 appointmentSchema.index({ lawyerId: 1, status: 1 });
 appointmentSchema.index({ date: 1, startTime: 1 });
 appointmentSchema.index({ status: 1, date: 1 });
-appointmentSchema.index({ appointmentId: 1 }, { unique: true });
 
 const Appointment = mongoose.model('Appointment', appointmentSchema);
 

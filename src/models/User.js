@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: function() {
+    required: function () {
       return !this.googleId; // Password not required if user signed up with Google
     },
     minlength: [6, 'Password must be at least 6 characters long']
@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema({
   // For lawyers
   licenseNumber: {
     type: String,
-    required: function() {
+    required: function () {
       return this.role === 'lawyer';
     },
     unique: true,
@@ -90,7 +90,7 @@ const userSchema = new mongoose.Schema({
   // For court clerks
   employeeId: {
     type: String,
-    required: function() {
+    required: function () {
       return this.role === 'clerk';
     },
     unique: true,
@@ -98,7 +98,7 @@ const userSchema = new mongoose.Schema({
   },
   courtAssigned: {
     type: String,
-    required: function() {
+    required: function () {
       return this.role === 'clerk';
     }
   },
@@ -106,7 +106,7 @@ const userSchema = new mongoose.Schema({
   // For judges
   judgeId: {
     type: String,
-    required: function() {
+    required: function () {
       return this.role === 'judge';
     },
     unique: true,
@@ -164,7 +164,7 @@ userSchema.virtual('appointments', {
 });
 
 // Pre-save middleware to hash password
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   // Only hash the password if it has been modified (or is new)
   if (!this.isModified('password')) return next();
 
@@ -179,7 +179,7 @@ userSchema.pre('save', async function(next) {
 });
 
 // Pre-save middleware to handle email verification
-userSchema.pre('save', function(next) {
+userSchema.pre('save', function (next) {
   // Auto-verify email for Google OAuth users
   if (this.googleId && !this.isEmailVerified) {
     this.isEmailVerified = true;
@@ -188,12 +188,12 @@ userSchema.pre('save', function(next) {
 });
 
 // Instance method to check password
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
 // Instance method to get public profile
-userSchema.methods.getPublicProfile = function() {
+userSchema.methods.getPublicProfile = function () {
   const userObject = this.toObject();
   delete userObject.password;
   delete userObject.googleId;
@@ -208,7 +208,7 @@ userSchema.methods.getPublicProfile = function() {
 };
 
 // Static method to find by email or phone
-userSchema.statics.findByEmailOrPhone = function(identifier) {
+userSchema.statics.findByEmailOrPhone = function (identifier) {
   return this.findOne({
     $or: [
       { email: identifier.toLowerCase() },
@@ -218,10 +218,10 @@ userSchema.statics.findByEmailOrPhone = function(identifier) {
 };
 
 // Text search index for lawyers
-userSchema.index({ 
-  name: 'text', 
+userSchema.index({
+  name: 'text',
   specialization: 'text',
-  lawFirm: 'text' 
+  lawFirm: 'text'
 }, {
   weights: {
     name: 10,
@@ -233,10 +233,6 @@ userSchema.index({
 // Compound indexes for common queries
 userSchema.index({ role: 1, isActive: 1 });
 userSchema.index({ role: 1, available: 1 });
-userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ licenseNumber: 1 }, { unique: true, sparse: true });
-userSchema.index({ employeeId: 1 }, { unique: true, sparse: true });
-userSchema.index({ judgeId: 1 }, { unique: true, sparse: true });
 
 const User = mongoose.model('User', userSchema);
 
